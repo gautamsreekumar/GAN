@@ -7,7 +7,7 @@ sigma_true = 10
 u_g = 1
 sigma_g = 1
 
-number_of_iterations = 1000
+number_of_iterations = 100
 k_steps = 10 # learning ratio of discriminator to that of the generator
 m = 100 # batch size
 test_cases = 1000
@@ -39,24 +39,24 @@ unity = tf.Variable(1.0, dtype=tf.float64)
 maximize_this = tf.reduce_mean(tf.reduce_sum(tf.log(d_y)+tf.log(unity-d_g_y)))
 optim_d = [d_W1, d_b1, d_W2, d_b2] # list of variables to be updated in d-network
 grad_d = tf.train.GradientDescentOptimizer(alpha_d).compute_gradients(maximize_this, var_list=optim_d)
-'''for item in range(len(optim_d)):
-    optim_d[item].assign(optim_d[item] + alpha_d*grad_d[item][0]) # gradient ascent'''
-d_W1.assign(d_W1 + alpha_d*grad_d[0][0])
+for item in range(len(optim_d)):
+    optim_d[item].assign(optim_d[item] + alpha_d*grad_d[item][0]) # gradient ascent
+'''d_W1.assign(d_W1 + alpha_d*grad_d[0][0])
 d_b1.assign(d_b1 + alpha_d*grad_d[1][0])
 d_W2.assign(d_W2 + alpha_d*grad_d[2][0])
-d_b2.assign(d_b2 + alpha_d*grad_d[3][0])
-# train_step_d = tf.train.GradientDescentOptimizer(alpha_d).minimize(maximize_this)
+d_b2.assign(d_b2 + alpha_d*grad_d[3][0])'''
+train_step_d = tf.train.GradientDescentOptimizer(alpha_d).minimize(-maximize_this)
 
 minimize_this = tf.reduce_mean(tf.reduce_sum(tf.log(unity-d_g_y)))
 optim_g = [g_W1, g_b1, g_W2, g_b2] # list of variables to updated in g-network
 grad_g = tf.train.GradientDescentOptimizer(alpha_g).compute_gradients(minimize_this, var_list=optim_g)
-'''for item in range(len(optim_g)):
-    optim_g[item].assign(optim_g[item] - alpha_g*grad_g[item][0]) # gradient descent'''
-g_W1.assign(g_W1 - alpha_g*grad_g[0][0])
+for item in range(len(optim_g)):
+    optim_g[item].assign(optim_g[item] - alpha_g*grad_g[item][0])
+'''g_W1.assign(g_W1 - alpha_g*grad_g[0][0])
 g_b1.assign(g_b1 - alpha_g*grad_g[1][0])
 g_W2.assign(g_W2 - alpha_g*grad_g[2][0])
-g_b2.assign(g_b2 - alpha_g*grad_g[3][0])
-# train_step_g = tf.train.GradientDescentOptimizer(alpha_g).minimize(minimize_this)
+g_b2.assign(g_b2 - alpha_g*grad_g[3][0])'''
+train_step_g = tf.train.GradientDescentOptimizer(alpha_g).minimize(minimize_this)
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
