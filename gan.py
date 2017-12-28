@@ -27,7 +27,7 @@ with tf.variable_scope("g_network", reuse=tf.AUTO_REUSE):
     g_b1 = tf.get_variable('g_b1', [g_hidden_layer, 1], dtype=tf.float64)
     g_W2 = tf.get_variable('g_W2', [g_output_layer, g_hidden_layer], dtype=tf.float64)
     g_b2 = tf.get_variable('g_b2', [g_output_layer, 1], dtype=tf.float64)
-    g_y = tf.nn.softmax(tf.matmul(g_W2, tf.matmul(g_W1, z)+g_b1)+g_b2)
+    g_y = tf.matmul(g_W2, tf.nn.softmax(tf.matmul(g_W1, z)+g_b1))+g_b2
 
 alpha_d = alpha
 d_input_layer = m
@@ -45,8 +45,8 @@ with tf.variable_scope("d_network", reuse=tf.AUTO_REUSE):
     d_b1 = tf.get_variable('d_b1', [d_hidden_layer, 1], dtype=tf.float64)
     d_W2 = tf.get_variable('d_W2', [d_output_layer, d_hidden_layer], dtype=tf.float64)
     d_b2 = tf.get_variable('d_b2', [d_output_layer, 1], dtype=tf.float64)
-    d_y = tf.nn.softmax(tf.matmul(d_W2, tf.matmul(d_W1, x)+d_b1)+d_b2)
-    d_g_y = tf.nn.softmax(tf.matmul(d_W2, tf.matmul(d_W1, g_y)+d_b1)+d_b2)
+    d_y = tf.nn.softmax(tf.matmul(d_W2, tf.nn.softmax(tf.matmul(d_W1, x)+d_b1))+d_b2)
+    d_g_y = tf.nn.softmax(tf.matmul(d_W2, tf.nn.softmax(tf.matmul(d_W1, g_y)+d_b1))+d_b2)
 
 unity = tf.Variable(1.0, dtype=tf.float64)
 maximize_this = tf.reduce_mean(tf.reduce_sum(tf.log(d_y)+tf.log(unity-d_g_y)))
@@ -73,23 +73,25 @@ train_step_g = tf.train.GradientDescentOptimizer(alpha_g).minimize(minimize_this
 
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
+print sess.run(g_W2)
 
 for iterations in range(number_of_iterations):
     for k in range(k_steps):
         with tf.variable_scope("d_network", reuse=tf.AUTO_REUSE):
             sampled_x = nprand.normal(u_true, sigma_true, m).reshape(m, 1)
             sampled_z = nprand.normal(u_g, sigma_g, m).reshape(m, 1)
-            print sess.run(train_step_d, feed_dict={x: sampled_x, z:sampled_z}), "training discriminator"
-            # sess.run(optim_d, feed_dict={x: sampled_x, z:sampled_z})
-            # print "training discriminator"
+            # print sess.run(train_step_d, feed_dict={x: sampled_x, z:sampled_z}), "training discriminator"
+            sess.run(optim_d, feed_dict={x: sampled_x, z:sampled_z})
+            print sess.run(g_y, feed_dict={x: sampled_x, z:sampled_z})
+            # print "grad[0][0]", sess.run(grad_d, feed_dict={x: sampled_x, z:sampled_z})[0][0]
     with tf.variable_scope("g_network", reuse=tf.AUTO_REUSE):
         sampled_z = nprand.normal(u_g, sigma_g, m).reshape(m, 1)
-        print sess.run(train_step_g, feed_dict={z: sampled_z}), "training generator"
+        sess.run(train_step_g, feed_dict={z: sampled_z})
         # sess.run(optim_g, feed_dict={z:sampled_z})
         # print "training generator"
 
 for testing in range(test_cases):
     sampled_z = nprand.normal(u_g, sigma_g, m).reshape(m, 1)
-    print "testing", sess.run(d_g_y, feed_dict={z:sampled_z})
+    sess.run(d_g_y, feed_dict={z:sampled_z})
 
 print sess.run(g_W2)
