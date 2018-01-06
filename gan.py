@@ -10,8 +10,8 @@ mnist = input_data.read_data_sets("../MNIST_dataset/", one_hot=True)
 
 STD_DEV = 0.01
 
-alpha = 0.2
-alpha_g = alpha
+alpha = 0.1
+alpha_g = 0.05
 g_input_layer = 100
 g_output_layer = 784
 g_hidden_layer = 128
@@ -23,7 +23,7 @@ g_b1 = tf.Variable(tf.zeros([g_hidden_layer]), name='g_b1')
 g_W2 = tf.Variable(tf.random_normal([g_hidden_layer, g_output_layer], stddev=STD_DEV), name='g_W2')
 g_b2 = tf.Variable(tf.zeros([g_output_layer]), name='g_b2')
 
-alpha_d = 0.12
+alpha_d = 0.14
 d_input_layer = 784
 d_output_layer = 1
 d_hidden_layer = 128
@@ -51,10 +51,12 @@ g_y, g_layer1 = g_net(z)
 d_g_y, d_g_layer1 = d_net(g_y)
 maximize_this = -tf.reduce_mean(tf.log(d_y)+tf.log(1-d_g_y), axis=0)
 optim_d = [d_W1, d_b1, d_W2, d_b2] # list of variables to be updated in d-network
+# train_step_d = tf.train.GradientDescentOptimizer(alpha_d).minimize(maximize_this, var_list=optim_d)
 train_step_d = tf.train.GradientDescentOptimizer(alpha_d).minimize(maximize_this, var_list=optim_d)
 
 minimize_this = -tf.reduce_mean(tf.log(d_g_y), axis=0)
 optim_g = [g_W1, g_b1, g_W2, g_b2] # list of variables to updated in g-network
+# train_step_g = tf.train.GradientDescentOptimizer(alpha_g).minimize(minimize_this, var_list=optim_g)
 train_step_g = tf.train.GradientDescentOptimizer(alpha_g).minimize(minimize_this, var_list=optim_g)
 
 sess = tf.InteractiveSession()
@@ -73,7 +75,6 @@ k_steps = 2 # learning ratio of discriminator to that of the generator
 batch_size = 50
 sample_length = 10
 test_cases = 1000
-minibatch = 1
 
 _ = 0
 # for iteration in range(number_of_iterations):
@@ -95,10 +96,6 @@ while True:
     summary_str = sess.run(merged_ops, feed_dict={x: next_batch[0], z: sample_z})
 
     summary_writer.add_summary(summary_str, _)
-    '''if np.abs(d_pred/(g_pred+d_pred) - 0.5) < epsilon: # breaking condition
-        break
-    if np.abs(maximize_value) == np.inf or np.abs(minimize_value) == np.inf or np.isnan(np.abs(maximize_value)) or np.isnan(np.abs(minimize_value)):
-        break'''
     if _ % 100 == 0:
         duplicate = []
         sample_z = nprand.uniform(size=[batch_size, g_input_layer])
